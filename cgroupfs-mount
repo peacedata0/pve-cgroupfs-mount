@@ -26,7 +26,12 @@ fi
 
 # mount /sys/fs/cgroup if not already done
 if ! mountpoint -q /sys/fs/cgroup; then
-	mount -t tmpfs -o uid=0,gid=0,mode=0755 cgroup /sys/fs/cgroup
+	mount -t tmpfs -o uid=0,gid=0,mode=0755 none /sys/fs/cgroup
+fi
+
+if ! mountpoint -q /sys/fs/cgroup/all; then
+	mkdir -p /sys/fs/cgroup/all
+	mount -t cgroup cgroup /sys/fs/cgroup/all
 fi
 
 cd /sys/fs/cgroup
@@ -35,7 +40,7 @@ cd /sys/fs/cgroup
 for sys in $(awk '!/^#/ { if ($4 == 1) print $1 }' /proc/cgroups); do
 	mkdir -p $sys
 	if ! mountpoint -q $sys; then
-		if ! mount -n -t cgroup -o $sys cgroup $sys; then
+		if ! mount --bind -n /sys/fs/cgroup/all $sys; then
 			rmdir $sys || true
 		fi
 	fi
